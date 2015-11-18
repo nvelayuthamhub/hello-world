@@ -1,5 +1,6 @@
 package com.todo.nvelayutham.mytodoapp;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -8,6 +9,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import org.apache.commons.io.FileUtils;
 
@@ -21,16 +23,18 @@ public class ToDoActivity extends AppCompatActivity {
     ArrayAdapter<String> aToDoAdapter;
     ListView lvItems;
     EditText etEditText;
+    private final int REQUEST_CODE = 20;
+    private final int RESULT_CODE = 21;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.println(Log.INFO, "todoapp", "onCreate()");
         setContentView(R.layout.activity_to_do);
         populateArrayItems();
         lvItems = (ListView) findViewById(R.id.lvItems);
         lvItems.setAdapter(aToDoAdapter);
         etEditText = (EditText) findViewById(R.id.etEditText);
+
         lvItems.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
@@ -40,14 +44,44 @@ public class ToDoActivity extends AppCompatActivity {
                 return true;
             }
         });
+
+        lvItems.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                //aToDoAdapter.notifyDataSetChanged();
+                launchComposeView(position);
+            }
+        });
+
+    }
+
+    public void launchComposeView(int position) {
+        // first parameter is the context, second is the class of the activity to launch
+        Intent i = new Intent(this, EditItemActivity.class);
+        i.putExtra("position", (new Integer(position)).toString());
+        i.putExtra("value", toDoItems.get(position).toString());
+        startActivityForResult(i, REQUEST_CODE); // brings up the second activity
+    }
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // REQUEST_CODE is defined above
+        //if (resultCode == RESULT_OK && requestCode == REQUEST_CODE) {
+            // Extract name value from result extras
+            String position = data.getExtras().getString("position");
+            String value = data.getExtras().getString("value");
+            // Toast the name to display temporarily on screen
+           // Toast.makeText(this, "Changed - "+position+":"+value, Toast.LENGTH_SHORT).show();
+
+            toDoItems.set(new Integer(position).intValue(), value);
+            aToDoAdapter.notifyDataSetChanged();
+            writeItems();
+        //}
     }
 
     public void populateArrayItems() {
-        Log.println(Log.INFO, "todoapp", "populateArrayItems()");
         toDoItems = new ArrayList<String>();
-        /*toDoItems.add("Item 1");
-        toDoItems.add("Item 2");
-        toDoItems.add("Item 3");*/
         readItems();
         aToDoAdapter =  new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, toDoItems);
     }
